@@ -178,7 +178,7 @@ public class Values {
             /* Otherwise, we assume Linux or Mac */
 			else {
                 /* in either case, we would start in the user's home directory */
-			    platformFolder = System.getProperty("user.home");
+			    platformFolder = System.getProperty("user.home") + "/.smp";
 				/* if we are on a Mac, we are not done, we look for "Application Support" */
 				if (os.contains("MAC")) {
 					platformFolder += "/Library/Application Support";
