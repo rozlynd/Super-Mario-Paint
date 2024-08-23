@@ -150,6 +150,10 @@ public class Values {
 	 * @since v1.1.1
 	 */
 	public static final int MAX_UNDO_REDO_SIZE = 1000;
+	
+	private Values() {
+	    
+	}
 
 	/**
 	 * This works in lieu of preprocessor directives to define the
