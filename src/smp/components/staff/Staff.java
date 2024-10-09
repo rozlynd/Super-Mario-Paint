@@ -777,6 +777,7 @@ public class Staff {
                     queue++;
                     highlightSong(i);
                     theSequence = seq.get(i);
+                    theSequence.normalize();
                     theSequenceFile = files.get(i);
                     StateMachine.setNoteExtensions(
                             theSequence.getNoteExtensions());
