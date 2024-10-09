@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,10 +16,12 @@ import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Soundbank;
 import javax.sound.midi.Synthesizer;
 
-import smp.components.Values;
+import javafx.stage.Window;
 import smp.components.InstrumentIndex;
+import smp.components.Values;
 import smp.components.staff.sequences.Note;
 import smp.components.staff.sounds.SMPSynthesizer;
+import smp.fx.Dialog;
 import smp.stateMachine.Settings;
 import smp.stateMachine.StateMachine;
 
@@ -218,8 +221,8 @@ public class SoundfontLoader implements Loader {
 	 * @return if soundfont exists in AppData now
 	 * @since v1.1.2
 	 */
-	public boolean addSoundfont(String path) {
-		return addSoundfont(new File(path));
+	public boolean addSoundfont(String path, Window owner) {
+		return addSoundfont(new File(path), owner);
 	}
 	
 	/**
@@ -230,18 +233,23 @@ public class SoundfontLoader implements Loader {
 	 * @return if soundfont exists in AppData now
 	 * @since v1.1.2
 	 */
-	public boolean addSoundfont(File sf) {
+	public boolean addSoundfont(File sf, Window owner) {
 		String sfName = sf.getName();
 		if(sfName.isEmpty())
 			return false;
 		File destSf = new File(Values.SOUNDFONTS_FOLDER + sfName);
-		if(!destSf.exists()) {
-			try {
-				Files.copy(sf.toPath(), destSf.toPath());
-			} catch (IOException e) {
-				e.printStackTrace();
-				return false;
-			}
+		
+		if (destSf.exists()) {
+		    String mssg = "A soundfont named '" + sfName + "' was already added.\nReplace it?";
+		    if (!Dialog.showYesNoDialog(mssg, owner))
+		        return false;
+		}
+		
+		try {
+			Files.copy(sf.toPath(), destSf.toPath(), StandardCopyOption.REPLACE_EXISTING);
+		} catch (IOException e) {
+			e.printStackTrace();
+			return false;
 		}
 		return true;
 	}

@@ -1,18 +1,21 @@
 package smp.fx;
 
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.FlowPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.stage.Stage;
+import javafx.scene.text.TextAlignment;
+import javafx.stage.Modality;
 import javafx.stage.StageStyle;
+import javafx.stage.Window;
 import javafx.stage.WindowEvent;
 
 /**
@@ -21,55 +24,65 @@ import javafx.stage.WindowEvent;
  * @since 2013.12.23
  */
 public class Dialog {
-
-    /** A choice that we have made in some dialog box. */
-    private static boolean choice = false;
-
-    /** Some text that we type into a field in a text dialog. */
-    private static String info = "";
+    
+    private static <T> StageWithReturn<T> initDialogStage(Window owner) {
+        StageWithReturn<T> stage = new StageWithReturn<T>();
+        stage.setResizable(false);
+        stage.initOwner(owner);
+        stage.initModality(Modality.WINDOW_MODAL);
+        // setting this style seems to be blocking everything
+        // commenting out until someone finds why --rozlyn
+//        stage.initStyle(StageStyle.UTILITY);
+        return stage;
+    }
+    
+    private static Parent makeLayout(Node... elements) {
+        VBox layout = new VBox();
+        layout.setSpacing(10);
+        layout.setPadding(new Insets(10, 10, 10, 10));
+        layout.setAlignment(Pos.CENTER);
+        layout.getChildren().addAll(elements);
+        return layout;
+    }
+    
+    private static Parent makeRow(Node... elements) {
+        HBox layout = new HBox();
+        layout.setSpacing(10);
+        layout.setAlignment(Pos.CENTER);
+        layout.getChildren().addAll(elements);
+        return layout;
+    }
 
     /**
      * Shows a dialog box with the text given to this method.
      * @param txt The text to show.
      */
-    public static void showDialog(String txt) {
-        final Stage dialog = new Stage();
-        dialog.setHeight(150);
-        dialog.setWidth(250);
-        dialog.setResizable(false);
-        dialog.initStyle(StageStyle.UTILITY);
+    public static void showDialog(String txt, Window owner) {
+        final StageWithReturn<Void> dialog = initDialogStage(owner);
+        
         Label label = new Label(txt);
+        label.setTextAlignment(TextAlignment.CENTER);
         Button okButton = new Button("OK");
 
-        okButton.setOnAction(new EventHandler<ActionEvent>() {
-
-            @Override
-            public void handle(ActionEvent event) {
-                dialog.close();
-            }
-
-        });
+        okButton.setOnAction(event -> dialog.close());
         
         /* @since 1.4.1, ESC/Enter to close dialog */
-        dialog.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent ke) {
-            	if (ke.getCode() == KeyCode.ENTER || ke.getCode() == KeyCode.ESCAPE) {
-                    dialog.close();
-            	}
-            }
+        dialog.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
+            if (event.getCode() == KeyCode.ENTER || event.getCode() == KeyCode.ESCAPE)
+                dialog.close();
         });
+        
+        Parent buttons = makeRow(okButton);
+        Parent layout = makeLayout(label, buttons);
+        
+        Scene scene = new Scene(layout);
+        dialog.setScene(scene);
+        dialog.showAndReturn();
 
-        FlowPane pane = new FlowPane(10, 10);
-        pane.setAlignment(Pos.CENTER);
-        pane.getChildren().addAll(okButton);
-        VBox vBox = new VBox(10);
-        vBox.setAlignment(Pos.CENTER);
-        vBox.getChildren().addAll(label, pane);
-        Scene scene1 = new Scene(vBox);
-        dialog.setScene(scene1);
-        dialog.showAndWait();
-
+    }
+    
+    public static void showDialog(String txt) {
+        showDialog(txt, null);
     }
 
     /**
@@ -77,74 +90,53 @@ public class Dialog {
      * Modified it to show an ok / cancel dialog.
      * @param txt The text to show.
      */
-    public static boolean showYesNoDialog(String txt) {
-        final Stage dialog = new Stage();
-        dialog.setHeight(150);
-        dialog.setWidth(250);
-        dialog.setResizable(false);
-        dialog.initStyle(StageStyle.UTILITY);
+    public static boolean showYesNoDialog(String txt, Window owner) {
+        final StageWithReturn<Boolean> dialog = initDialogStage(owner);
+        
         Label label = new Label(txt);
-        Button okButton = new Button("OK");
+        label.setTextAlignment(TextAlignment.CENTER);
+        Button okButton = new Button("Yes");
+        Button cancelButton = new Button("No");
 
-        okButton.setOnAction(new EventHandler<ActionEvent>() {
-
-            @Override
-            public void handle(ActionEvent event) {
-                dialog.close();
-                choice = true;
-                event.consume();
-            }
-
+        okButton.setOnAction(event -> {
+            dialog.returnValue = true;
+            dialog.close();
         });
 
-        Button cancelButton = new Button("Cancel");
-        cancelButton.setOnAction(new EventHandler<ActionEvent>() {
-
-            @Override
-            public void handle(ActionEvent event) {
-                dialog.close();
-                choice = false;
-                event.consume();
-            }
+        cancelButton.setOnAction(event -> {
+            dialog.returnValue = false;
+            dialog.close();
         });
         
         /* @since 1.4.1, ESC to close dialog, Enter to accept */
-        dialog.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent ke) {
-            	if (ke.getCode() == KeyCode.ESCAPE) {
-                    choice = false;
-                    dialog.close();
-                    ke.consume();
-            	} else if (ke.getCode() == KeyCode.ENTER) {
-                    choice = true;
-                    dialog.close();
-                    ke.consume();
-            	}
-            }
+        dialog.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
+        	if (event.getCode() == KeyCode.ESCAPE) {
+        	    dialog.returnValue = false;
+                dialog.close();
+        	} else if (event.getCode() == KeyCode.ENTER) {
+                dialog.returnValue = true;
+                dialog.close();
+        	}
         });
 
-        dialog.addEventHandler(WindowEvent.ANY, new EventHandler<WindowEvent>()  {
-            @Override
-            public void handle(WindowEvent we) {
-                if (we.getEventType() == WindowEvent.WINDOW_CLOSE_REQUEST
-                        || we.getEventType() == WindowEvent.WINDOW_HIDDEN
-                        || we.getEventType() == WindowEvent.WINDOW_HIDING)
-                    dialog.close();
-                    return;
-            }
+        dialog.addEventHandler(WindowEvent.ANY, event -> {
+            if (event.getEventType() == WindowEvent.WINDOW_CLOSE_REQUEST
+                    || event.getEventType() == WindowEvent.WINDOW_HIDDEN
+                    || event.getEventType() == WindowEvent.WINDOW_HIDING)
+                dialog.close();
+                return;
         });
         
-        FlowPane pane = new FlowPane(10, 10);
-        pane.setAlignment(Pos.CENTER);
-        pane.getChildren().addAll(okButton, cancelButton);
-        VBox vBox = new VBox(10);
-        vBox.setAlignment(Pos.CENTER);
-        vBox.getChildren().addAll(label, pane);
-        Scene scene1 = new Scene(vBox);
-        dialog.setScene(scene1);
-        dialog.showAndWait();
-        return choice;
+        Parent buttons = makeRow(okButton, cancelButton);
+        Parent layout = makeLayout(label, buttons);
+        
+        Scene scene = new Scene(layout);
+        dialog.setScene(scene);
+        return dialog.showAndReturn();
+    }
+    
+    public static boolean showYesNoDialog(String txt) {
+        return showYesNoDialog(txt, null);
     }
 
     /**
@@ -152,63 +144,47 @@ public class Dialog {
      * Modified it to show a text dialog.
      * @param txt The text to show.
      */
-    public static String showTextDialog(String txt) {
-        final Stage dialog = new Stage();
-        dialog.setHeight(125);
-        dialog.setWidth(150);
-        dialog.setResizable(false);
-        dialog.initStyle(StageStyle.UTILITY);
+    public static String showTextDialog(String txt, Window owner) {
+        final StageWithReturn<String> dialog = initDialogStage(owner);
+        
         Label label = new Label(txt);
-        final TextField t = new TextField();
+        label.setTextAlignment(TextAlignment.CENTER);
+        final TextField textfield = new TextField();
+        textfield.setPrefColumnCount(8); // rather small; this is only for tempo afaik
         Button okButton = new Button("OK");
+        Button cancelButton = new Button("Cancel");
 
-        okButton.setOnAction(new EventHandler<ActionEvent>() {
-
-            @Override
-            public void handle(ActionEvent event) {
-                info = t.getText();
-                dialog.close();
-            }
-
+        okButton.setOnAction(event -> {
+            dialog.returnValue = textfield.getText();
+            dialog.close();
         });
 
-        Button cancelButton = new Button("Cancel");
-        cancelButton.setOnAction(new EventHandler<ActionEvent>() {
-
-            @Override
-            public void handle(ActionEvent event) {
-                info = "";
-                dialog.close();
-                event.consume();
-            }
+        cancelButton.setOnAction(event -> {
+            dialog.returnValue = "";
+            dialog.close();
         });
         
         /* @since 1.4.1, ESC to close dialog, Enter to accept */
-        dialog.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
-            @Override
-            public void handle(KeyEvent ke) {
-            	if (ke.getCode() == KeyCode.ESCAPE) {
-                    info = "";
-                    dialog.close();
-                    ke.consume();
-            	} else if (ke.getCode() == KeyCode.ENTER) {
-                    info = t.getText();
-                    dialog.close();
-                    ke.consume();
-            	}
-            }
+        dialog.addEventHandler(KeyEvent.KEY_PRESSED, event -> {
+        	if (event.getCode() == KeyCode.ESCAPE) {
+        	    dialog.returnValue = "";
+                dialog.close();
+        	} else if (event.getCode() == KeyCode.ENTER) {
+                dialog.returnValue = textfield.getText();
+                dialog.close();
+        	}
         });
 
-        FlowPane pane = new FlowPane(10, 10);
-        pane.setAlignment(Pos.CENTER);
-        pane.getChildren().addAll(okButton, cancelButton);
-        VBox vBox = new VBox(10);
-        vBox.setAlignment(Pos.CENTER);
-        vBox.getChildren().addAll(label, t, pane);
-        Scene scene1 = new Scene(vBox);
-        dialog.setScene(scene1);
-        dialog.showAndWait();
-        return info;
+        Parent buttons = makeRow(okButton, cancelButton);
+        Parent layout = makeLayout(label, textfield, buttons);
+        
+        Scene scene = new Scene(layout);
+        dialog.setScene(scene);
+        return dialog.showAndReturn();
+    }
+    
+    public static String showTextDialog(String txt) {
+        return showTextDialog(txt, null);
     }
 
 }
