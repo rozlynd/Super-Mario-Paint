@@ -180,7 +180,6 @@ public class Staff {
      *            is to be displayed.
      */
     public synchronized void setLocation(int num) {
-        theMatrix.redraw();
         int maxVal = StateMachine.getMaxLine() - Values.NOTELINES_IN_THE_WINDOW;
         int newLoc = (num < 0) ? 0 : (num > maxVal) ? maxVal : num;
         StateMachine.setMeasureLineNum(newLoc);
@@ -190,12 +189,7 @@ public class Staff {
      * Force re-draws the staff.
      */
     public synchronized void redraw() {
-        Platform.runLater(new Runnable() {
-            @Override
-            public void run() {
-                theMatrix.redraw();
-            }
-        });
+        Platform.runLater(() -> theMatrix.redraw());
     }
 
     /** Turns off all highlights in the play bars in the staff. */
@@ -228,6 +222,7 @@ public class Staff {
         ArrayList<StaffSequence> seq = theArrangement.getTheSequences();
         ArrayList<File> files = theArrangement.getTheSequenceFiles();
         setLocation(0);
+        redraw();
         for (int i = 0; i < seq.size(); i++) {
             File f = files.get(i);
             try {
