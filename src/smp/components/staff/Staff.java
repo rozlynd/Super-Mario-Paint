@@ -579,18 +579,21 @@ public class Staff {
                 int counter = StateMachine.getMeasureLineNum();
                 boolean zero = false;
                 int endLine = theSequence.getEndlineIndex();
+                queue = 0;
+                
                 while (songPlaying) {
                     StateMachine.setPlaybackPosition(index);
                     
                     if (zero) {
                         setLocation(0);
-                        while (queue > 0)
-                            ;
+                        while (queue > 0);
                         zero = false;
                     }
+                    
                     queue++;
                     playNextLine();
                     counter++;
+                    
                     if (counter >= endLine) {
                         if (StateMachine.isLoopPressed()) {
                             counter = 0;
@@ -601,6 +604,7 @@ public class Staff {
                             songPlaying = false;
                         }
                     }
+                    
                     try {
                         Thread.sleep(delayMillis, delayNanos);
                     } catch (InterruptedException e) {
@@ -678,10 +682,9 @@ public class Staff {
                 ArrayList<StaffSequence> seq = theArrangement.getTheSequences();
                 ArrayList<File> files = theArrangement.getTheSequenceFiles();
                 int endLine;
+                queue = 0;
+                
                 for (int i = 0; i < seq.size(); i++) {
-                    while (queue > 0)
-                        ;
-                    /* Force emptying of queue before changing songs. */
                     setSoundset(seq.get(i).getSoundset());
                     index = 0;
                     advance = false;
@@ -699,9 +702,7 @@ public class Staff {
                     setTempo(theSequence.getTempo());
                     int counter = 0;
                     setLocation(0);
-                    while (queue > 0)
-                        ;
-                    /* Force operations to complete before starting a song. */
+
                     while (songPlaying && arrPlaying) {
                         StateMachine.setPlaybackPosition(index);
 
@@ -717,8 +718,12 @@ public class Staff {
                             // Do nothing
                         }
                     }
+                    
                     if (!arrPlaying)
                         break;
+
+                    /* Force emptying of queue before changing songs. */
+                    while (queue > 0);
                 }
                 hitStop();
                 return theMatrix.getStaff();
